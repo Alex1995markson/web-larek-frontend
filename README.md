@@ -1,440 +1,352 @@
-# Проектная работа "Веб-ларек"
+# Проектная работа «Веб-ларёк» — README (с оглавлением)
 
-> Данный документ представляет структурированное и формализованное описание компонентов, типов данных и взаимодействий приложения, реализованного по парадигме **MVP**.
+> Этот документ формализует **базовые классы**, их назначение и функции, отражая архитектуру по парадигме **MVP (Model-View-Presenter)**. Опционально к проекту может быть приложена UML-схема (диаграмма классов/последовательностей) для визуализации.
 
----
+## Содержание
 
-## Оглавление
-- [Краткое описание](#краткое-описание)
-- [Данные и типы данных](#данные-и-типы-данных)
-  - [Карточка](#карточка)
-  - [Форма](#форма)
-  - [Интерфейс модели карточек](#интерфейс-модели-карточек)
-  - [Корзина товаров](#корзина-товаров)
-  - [Интерфейс оформления покупки](#интерфейс-оформления-покупки)
-  - [Типы данных (алиасы)](#типы-данных-алиасы)
-- [Архитектура приложения](#архитектура-приложения)
-- [Базовая инфраструктура](#базовая-инфраструктура)
-  - [Класс Api](#класс-api)
-  - [Класс EventEmitter](#класс-eventemitter)
-- [Слой данных](#слой-данных)
-  - [Класс CardsData](#класс-cardsdata)
-  - [Класс BasketData](#класс-basketdata)
-  - [Класс UserData](#класс-userdata)
-- [Слой представления](#слой-представления)
-  - [Класс Modal](#класс-modal)
-  - [Класс ModalWithOrder](#класс-modalwithorder)
-  - [Класс ModalWithContacts](#класс-modalwithcontacts)
-  - [Класс ModalWithCard](#класс-modalwithcard)
-  - [Класс ModalWithConfirm](#класс-modalwithconfirm)
-  - [Класс Card](#класс-card)
-  - [Класс CardsContainer](#класс-cardscontainer)
-  - [Класс Basket](#класс-basket)
-  - [Класс BasketPreview](#класс-basketpreview)
-- [Слой коммуникации](#слой-коммуникации)
-  - [Класс AppApi](#класс-appapi)
-- [Взаимодействие компонентов](#взаимодействие-компонентов)
-- [Событийная модель](#событийная-модель)
-  - [События изменения данных](#события-изменения-данных)
-  - [События пользовательского интерфейса](#события-пользовательского-интерфейса)
+- [1) Базовые сущности и типы](#1-базовые-сущности-и-типы)
+  - [Полное описание товара (DTO, приходит с API)](#полное-описание-товара-dto-приходит-с-api)
+  - [Данные о заказе (отправляются на сервер)](#данные-о-заказе-отправляются-на-сервер)
+- [2) Архитектура (MVP)](#2-архитектура-mvp)
+- [3) Описание базовых классов](#3-описание-базовых-классов)
+  - [3.1. Базовый класс для работы с API](#31-базовый-класс-для-работы-с-api)
+  - [3.2. Model (слой данных и логики)](#32-model-слой-данных-и-логики)
+    - [BasketModel](#basketmodel)
+    - [AppState](#appstate)
+    - [CardsModel](#cardsmodel)
+  - [3.3. View (слой отображения)](#33-view-слой-отображения)
+    - [CardView](#cardview)
+    - [BasketView](#basketview)
+    - [Header](#header)
+    - [Gallery](#gallery)
+    - [Modal (универсальное окно)](#modal-универсальное-окно)
+    - [Order (форма заказа)](#order-форма-заказа)
+    - [Contacts (форма контактов)](#contacts-форма-контактов)
+    - [SuccessView](#successview)
+  - [3.4. Базовые классы (инфраструктура)](#34-базовые-классы-инфраструктура)
+    - [Component](#component)
+    - [EventEmitter](#eventemitter)
+- [4) События приложения](#4-события-приложения)
+- [5) Работа с DOM](#5-работа-с-dom)
+- [6) Дополнительно (UML)](#6-дополнительно-uml)
+- [7) Установка и запуск](#7-установка-и-запуск)
 
 ---
 
-## Краткое описание
+## 1) Базовые сущности и типы
 
-Стек: HTML, SCSS, TS, Webpack
+Ниже — ключевые **данные, приходящие с API**, и **данные, отправляемые на сервер**. Они соответствуют текущей контрактной модели.
 
-Структура проекта:
-- src/ — исходные файлы проекта
-- src/components/ — папка с JS компонентами
-- src/components/base/ — папка с базовым кодом
+### Полное описание товара (DTO, приходит с API)
 
-Важные файлы:
-- src/pages/index.html — HTML-файл главной страницы
-- src/types/index.ts — файл с типами
-- src/index.ts — точка входа приложения
-- src/scss/styles.scss — корневой файл стилей
-- src/utils/constants.ts — файл с константами
-- src/utils/utils.ts — файл с утилитами
-
-## Установка и запуск
-Для установки и запуска проекта необходимо выполнить команды
-
+```ts
+export interface IItem {
+  id: string;          // идентификатор
+  description: string; // описание
+  image: string;       // фото
+  title: string;       // наименование
+  category: string;    // категория
+  price: number | null;// если не указана — null
+  index?: string;      // порядковый номер (опционально)
+}
 ```
+
+### Данные о заказе (отправляются на сервер)
+
+```ts
+export type PaymentMethod = 'card' | 'cash' | '';
+
+export interface IOrder {
+  payment: PaymentMethod; // 'card' — картой, 'cash' — при получении, '' — не выбрано
+  email: string;          // эмейл
+  phone: string;          // телефон
+  address: string;        // адрес
+  total: number;          // сумма заказа
+  items: string[];        // массив ID товаров
+}
+
+export interface IOrderConfirmed {
+  id: string;
+  total: number;
+}
+
+export interface IBasket {
+  items: string[]; // список ID товаров в корзине
+  total: number;   // сумма по корзине
+}
+
+export interface IUser {
+  payment?: PaymentMethod;
+  address?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface ICardActions {
+  onClick: (event: MouseEvent) => void;
+}
+
+/** Валидационные данные формы заказа на клиенте */
+export interface IOrderFormData extends IOrder {
+  valid: boolean;
+  errors: string;
+}
+```
+
+---
+
+## 2) Архитектура (MVP)
+
+Приложение организовано по **MVP**:
+
+- **Model (Модель)** — слой данных и бизнес-логики.
+- **View (Представление)** — слой отображения и пользовательских взаимодействий.
+- **Presenter (Посредник)** — связывает Model и View через событийный брокер.
+
+---
+
+## 3) Описание базовых классов
+
+### 3.1. Базовый класс для работы с API
+
+```ts
+export class Api {
+  readonly baseUrl: string;     // Базовый URL API
+  protected options: RequestInit;// Настройки запросов по умолчанию
+
+  // Конструктор класса
+  constructor(baseUrl: string, options: RequestInit = {}) {
+    this.baseUrl = baseUrl;
+    this.options = {
+      headers: {
+        'Content-Type': 'application/json',      // JSON-заголовок
+        ...(options.headers as object ?? {}),    // Пользовательские заголовки
+      },
+      ...options,
+    };
+  }
+
+  // Базовые методы (реализации зависят от проекта)
+  async get<T = unknown>(uri: string): Promise<T> { /* ... */ throw new Error('not implemented'); }
+  async post<T = unknown>(uri: string, data: object, method: 'POST' | 'PUT' | 'DELETE' = 'POST'): Promise<T> { /* ... */ throw new Error('not implemented'); }
+}
+```
+
+---
+
+### 3.2. Model (слой данных и логики)
+
+#### BasketModel
+**Назначение:** управляет состоянием корзины; добавление/удаление товаров, подсчёт суммы и количества.
+
+**Конструктор:**
+```ts
+constructor(events: IEvents) // events — брокер событий
+```
+
+**Методы:**
+- `addToBasket(item: IItem): void` — добавить товар;
+- `removeFromBasket(id: string): void` — удалить товар;
+- `getBasketTotal(): number` — получить общую сумму;
+- `getBasketCount(): number` — получить количество товаров;
+- `isInBasket(id: string): boolean` — проверить наличие товара;
+- `getItems(): IItem[]` — получить все товары в корзине;
+- `clearBasket(): void` — очистить корзину.
+
+#### AppState
+**Назначение:** глобальное состояние (товары, выбранный товар, корзина, данные заказа).
+
+**Конструктор:**
+```ts
+constructor(data: Partial<AppState>, events: IEvents)
+```
+
+**Свойства:**
+- `items: IItem[]` — список товаров;
+- `selectedItem: IItem | null` — выбранный товар;
+- `basket: IBasket` — данные корзины;
+- `order: IOrder` — данные заказа.
+
+**Методы:**
+- `setItems(items: IItem[]): void` — установить список товаров;
+- `setSelectedItem(item: IItem): void` — выбрать товар;
+- `setFieldsOder(): void` — установить поля заказа;
+- `validation(): boolean` — валидация данных заказа/контактов.
+
+#### CardsModel
+**Назначение:** каталог товаров; хранит загруженные товары.
+
+**Конструктор:**
+```ts
+constructor(events: IEvents)
+```
+
+**Методы:**
+- `setItems(items: IItem[]): void` — установить список товаров.
+
+---
+
+### 3.3. View (слой отображения)
+
+#### CardView
+**Назначение:** карточка товара (каталог/превью).
+
+**Конструктор:**
+```ts
+constructor(container: HTMLElement, events?: ICardActions)
+```
+
+**Методы:**
+- `updateButtonState(isInBasket: boolean): void` — обновить состояние кнопки.
+
+#### BasketView
+**Назначение:** отображение корзины.
+
+**Конструктор:**
+```ts
+constructor(container: HTMLElement, events: IEvents)
+```
+
+**Методы:**
+- `updateItems(items: HTMLElement[]): void` — обновить список товаров;
+- `setTotal(value: number): void` — установить общую сумму;
+- `refreshIndices(): void` — обновить порядковые номера.
+
+#### Header
+**Назначение:** иконка корзины + счётчик товаров.
+
+**Конструктор:**
+```ts
+constructor(container: HTMLElement, events: IEvents)
+```
+
+#### Gallery
+**Назначение:** контейнер каталога карточек.
+
+**Конструктор:**
+```ts
+constructor(container: HTMLElement, events: IEvents)
+```
+
+**Методы:**
+- `setCatalog(items: HTMLElement[]): void` — установить каталог.
+
+#### Modal (универсальное окно)
+**Назначение:** единое модальное окно.
+
+**Конструктор:**
+```ts
+constructor(container: HTMLElement, events: IEvents)
+```
+
+**Методы:**
+- `modalOpen(): void` — открыть;
+- `modalClose(): void` — закрыть.
+
+#### Order (форма заказа)
+**Назначение:** форма заказа (адрес + способ оплаты).
+
+**Конструктор:**
+```ts
+constructor(container: HTMLFormElement, events: IEvents)
+```
+
+**Методы:**
+- `selectPayment(payment: 'card' | 'cash'): void` — выбор способа оплаты;
+- `validateForm(): boolean` — валидация формы.
+
+#### Contacts (форма контактов)
+**Назначение:** форма контактных данных (email, телефон).
+
+**Конструктор:**
+```ts
+constructor(container: HTMLFormElement, events: IEvents)
+```
+
+#### SuccessView
+**Назначение:** экран успешного оформления заказа.
+
+**Конструктор:**
+```ts
+constructor(container: HTMLElement, events: IEvents)
+```
+
+---
+
+### 3.4. Базовые классы (инфраструктура)
+
+#### Component
+**Назначение:** базовый компонент для всех View.
+
+**Конструктор:**
+```ts
+constructor(protected readonly container: HTMLElement)
+```
+
+**Методы:**
+- `render(data?: Partial<unknown>): HTMLElement` — отрисовка.
+
+**Утилиты для DOM:**
+- `toggleClass`, `setText`, `setDisabled`, `setHidden`, `setVisible`, `setImage`.
+
+#### EventEmitter
+**Назначение:** брокер событий (Observer).
+
+**Методы:**
+- `on(eventName: EventName, callback: (event: T) => void)` — подписка;
+- `off(eventName: EventName, callback: Subscriber)` — отписка;
+- `emit(eventName: string, data?: T)` — инициирование события;
+- `trigger(eventName: string, context?: Partial<unknown>)` — фабрика колбэков.
+
+---
+
+## 4) События приложения
+
+Приложение использует систему событий для связи компонентов.
+
+```ts
+export enum AppStateChanges {
+  items = 'items:change',         // загрузка/изменение товаров
+  select = 'item:select',         // выбор товара
+  modalOpen = 'modal:open',       // открытие модалки
+  modalClose = 'modal:close',     // закрытие модалки
+  basket = 'basket:changed',      // корзина изменилась
+  basketOpen = 'basket:open',     // открытие корзины
+  order = 'order:change',         // изменение данных заказа
+  orderOpen = 'order:open',       // открытие формы заказа
+  orderSubmit = 'order:submit',   // отправка формы заказа
+  contactsSubmit = 'contacts:submit', // отправка формы контактов
+  orderDone = 'order:done',       // заказ оформлен успешно
+  error = 'message:error',        // ошибки формы/приложения
+  success = 'success:newPurchase' // успешная покупка
+}
+```
+
+---
+
+## 5) Работа с DOM
+
+Для безопасной работы с DOM используются утилиты:
+
+- `ensureElement<T>(selector: string, container?: HTMLElement): T` — гарантированное получение элемента;
+- `cloneTemplate<T>(template: HTMLTemplateElement): T` — клонирование шаблона;
+- `createElement<K extends keyof HTMLElementTagNameMap>(tag: K, options?: ElementCreationOptions): HTMLElementTagNameMap[K]` — создание элемента.
+
+---
+
+## 6) Дополнительно (UML)
+
+Опционально рекомендуется добавить:
+- диаграмму классов (Class Diagram) для Model/View/Presenter и их связей;
+- диаграмму последовательностей (Sequence Diagram) для ключевых сценариев: «добавление в корзину», «оформление заказа».
+
+---
+
+## 7) Установка и запуск
+
+```bash
 npm install
 npm run start
-```
-
-или
-
-```
-yarn
-yarn start
-```
-## Сборка
-
-```
+# сборка:
 npm run build
 ```
-
-или
-
-```
-yarn build
-```
-
-## Данные и типы данных
-
-### Карточка
-
-```ts
-export interface ICard {
-  _id: string;
-  description: string;
-  image: string;
-  title: string;
-  category: string;
-  price: number | null;
-}
-```
-
-### Форма
-
-```ts
-export interface IForm {
-  payment: string;
-  email: string;
-  phone: string;
-  address: string;
-}
-```
-
-### Интерфейс модели карточек
-
-```ts
-export interface ICardsData {
-  cards: ICard[];
-  preview: string | null;
-  getCard(cardId: string): ICard;
-}
-```
-
-### Корзина товаров
-
-```ts
-export interface IBasketData {
-  total: number;
-  items: ICard[];
-  addCard(card: ICard): void;
-  deleteCard(cardId: string): void;
-  clearBuscket(data: Record<keyof TCardBasket, string>): void;
-  getList(): ICard[];
-}
-```
-
-> **Примечание:** Имена методов и полей приведены в исходном виде, включая возможные орфографические особенности (например, `clearBuscket`).
-
-### Интерфейс оформления покупки
-
-```ts
-export interface IUserData {
-  setUserInfo(): TPayment;
-  setUserContacts(): TContacts;
-  clearData(): void;
-}
-```
-
-### Типы данных (алиасы)
-
-```ts
-// Данные карточки, используемые в корзине
-export type TCardBasket = Pick<ICard, 'title' | 'price'>;
-
-// Данные формы для оплаты
-export type TPayment = Pick<IForm, 'payment' | 'address'>;
-
-// Данные формы с контактами
-export type TContacts = Pick<IForm, 'email' | 'phone'>;
-
-// Данные корзины с общей суммой покупки
-export type TPurchase = Pick<IBasketData, 'total'>;
-```
-
----
-
-## Архитектура приложения
-
-Приложение реализовано по парадигме **Model–View–Presenter (MVP)** с разграничением ответственности на три слоя:
-
-- **Слой представления (View):** отвечает за визуализацию данных и обработку пользовательских действий на уровне UI.
-- **Слой данных (Model):** обеспечивает хранение, валидацию и изменение данных.
-- **Презентер (Presenter):** координирует обмен информацией между слоем представления и слоем данных, управляет реакцией на события.
-
----
-
-## Базовая инфраструктура
-
-### Класс Api
-
-Класс инкапсулирует базовую логику сетевого взаимодействия.
-
-- **Конструктор:** принимает базовый URL сервера и необязательный объект HTTP-заголовков.
-- **Методы:**
-  - `get(endpoint: string)` — выполняет HTTP‑запрос `GET` и возвращает промис с ответом.
-  - `post(endpoint: string, data: object, method?: string)` — отправляет данные в формате JSON. По умолчанию используется `POST`; метод может быть переопределён третьим параметром.
-
-### Класс EventEmitter
-
-Класс реализует брокер событий для подписки и публикации событий в пределах системы. Применяется в презентере и слоях приложения.
-
-Интерфейс `IEvents` предусматривает следующие методы:
-
-- `on` — подписка на событие;
-- `emit` — публикация (инициация) события;
-- `trigger` — возвращает функцию, вызывающую указанное событие.
-
----
-
-## Слой данных
-
-### Класс CardsData
-
-Отвечает за хранение и доменную логику карточек товаров.
-
-- **Конструктор:** принимает экземпляр брокера событий.
-- **Поля:**
-  - `_cards: ICard[]` — коллекция карточек;
-  - `_preview: string | null` — идентификатор карточки, выбранной для предварительного просмотра в модальном окне;
-  - `events: IEvents` — экземпляр `EventEmitter`.
-- **Методы:**
-  - `getCard(cardId: string): ICard` — возвращает карточку по идентификатору;
-  - геттеры/сеттеры для управления `_cards` и `_preview`.
-
-### Класс BasketData
-
-Инкапсулирует состояние и операции с корзиной.
-
-- **Конструктор:** принимает экземпляр брокера событий.
-- **Поля и методы:**
-  - `total: number` — суммарная стоимость заказа;
-  - `_cards: ICard[]` — список карточек в корзине;
-  - `addCard(card: ICard): void` — добавляет товар и инициирует событие изменения;
-  - `deleteCard(cardId: string): void` — удаляет товар по идентификатору;
-  - `clearBuscket(): void` — очищает корзину;
-  - `getList(): ICard[]` — возвращает текущий список товаров;
-  - `events: IEvents` — экземпляр `EventEmitter`.
-
-### Класс UserData
-
-Обеспечивает хранение и обработку контактных и платёжных данных пользователя.
-
-- **Конструктор:** принимает экземпляр брокера событий.
-- **Поля и методы:**
-  - `payment: string` — способ оплаты;
-  - `adress: string` — адрес пользователя;
-  - `email: string` — электронная почта;
-  - `phone: string` — номер телефона;
-  - `setValid(isValid: boolean): void` — устанавливает флаг валидности данных;
-  - `setUserInfo(userData: IForm): TPayment` — сохраняет способ оплаты и адрес;
-  - `setUserContacts(userData: IForm): TContacts` — сохраняет контактные данные;
-  - `clearData(): void` — сбрасывает сохранённые данные;
-  - `events: IEvents` — экземпляр `EventEmitter`.
-
----
-
-## Слой представления
-
-Классы представления отвечают за отображение данных в переданном контейнере DOM и генерацию событий при пользовательском взаимодействии.
-
-### Класс Modal
-
-Реализует базовое модальное окно с произвольным HTML‑контентом.
-
-- **Методы:** `open`, `close`.
-- **Слушатели:** закрытие по клавише `Esc`, клику по оверлею и кнопке‑крестику.
-
-### Класс ModalWithOrder
-
-Модальное окно с формой, содержащей чекбокс и поле ввода.
-
-- При изменении значений инициирует событие о модификации данных.
-- Предоставляет управление активностью кнопки подтверждения.
-
-**Поля:**
-
-- `submitButton: HTMLButtonElement`
-- `_form: HTMLFormElement`
-- `formName: string`
-- `inputs: NodeListOf`
-
-**Методы:**
-
-- `setValid(isValid: boolean): void`
-- `setInputValues(data: Record<string, string>): void`
-- `close(): void` — очищает поля и деактивирует кнопку
-- `render(): HTMLElement`
-
-### Класс ModalWithContacts
-
-Модальное окно с формой для ввода контактных данных.
-
-- При сабмите публикует событие с агрегированными данными формы.
-- При изменениях в полях публикует событие об изменении данных.
-- Управляет активностью кнопки подтверждения.
-
-**Поля:**
-
-- `submitButton: HTMLButtonElement`
-- `_form: HTMLFormElement`
-- `formName: string`
-- `inputs: NodeListOf`
-
-**Методы:**
-
-- `setValid(isValid: boolean): void`
-- `setInputValues(data: Record<string, string>): void`
-- `close(): void`
-- `render(): HTMLElement`
-
-### Класс ModalWithCard
-
-Модальное окно для детального просмотра карточки товара.
-
-**Поля:**
-
-- `cardId: string`
-- `cardImage: HTMLImageElement`
-- `cardDescription: HTMLImageElement`
-- `cardTitle: HTMLImageElement`
-- `cardCategory: HTMLImageElement`
-- `cardPrice: HTMLImageElement`
-
-**Методы:**
-
-- `render(): HTMLElement`
-
-### Класс ModalWithConfirm
-
-Модальное окно подтверждения завершения покупки.
-
-**Поля:**
-
-- `submitButton: HTMLButtonElement`
-- `_form: HTMLFormElement`
-- `formName: string`
-- `handleSubmit: Function` — обработчик покупки, выполняемый при сабмите (включая закрытие окна)
-
-**Методы:**
-
-- `open(handleSubmit: Function): void` — регистрирует обработчик подтверждения
-- `render(): HTMLElement`
-
-### Класс Card
-
-Представление карточки товара с отображением названия, изображения, описания, категории и цены.
-
-- Конструктор принимает DOM‑шаблон и `EventEmitter`.
-- Устанавливает обработчики для всех интерактивных элементов.
-
-**Методы:**
-
-- `setData(cardData: ICard): void`
-- `render(): HTMLElement`
-- `get id(): string` — уникальный идентификатор карточки
-
-### Класс CardsContainer
-
-Компонент‑контейнер для размещения карточек на главной странице.
-
-- Конструктор принимает DOM‑контейнер.
-- Предоставляет сеттер массива HTML‑элементов для полного перерендеринга содержимого.
-
-### Класс Basket
-
-Компонент отображения корзины: перечень товаров, итоговая сумма и счётчик количества.
-
-- Устанавливает обработчики интерактивных элементов.
-
-**Поля:**
-
-- `handleButtom: HTMLButtonElement`
-- `total: string`
-- `cardsContainer: HTMLElement`
-
-**Методы:**
-
-- `setData(cardElements: HTMLElement[]): void`
-- `deleteCard(cardId: string): void`
-
-### Класс BasketPreview
-
-Мини‑компонент для отображения сведений о корзине на главной странице.
-
-**Поля и методы:**
-
-- `totalCards: number` — количество товаров
-- `open(): void` — открывает модальное окно корзины
-
----
-
-## Слой коммуникации
-
-### Класс AppApi
-
-Инкапсулирует взаимодействие с серверным API на базе класса `Api`.
-
-**Методы:**
-
-- `handleResponse(response: Response): Promise<any>` — возвращает `JSON` при успешном ответе либо бросает исключение;
-- `get(uri: string): Promise<any>` — выполняет запрос на получение данных;
-- `post(uri: string, data: object, method: ApiPostMethods = 'POST'): Promise<any>` — выполняет отправку данных.
-
----
-
-## Взаимодействие компонентов
-
-Механизмы интеграции слоёв определены в файле **`index.ts`**, исполняющем роль презентера:
-
-1. Инициализируются экземпляры всех необходимых классов.
-2. Настраиваются обработчики событий.
-3. Связь между слоями обеспечивается через публикацию и обработку событий, предоставляемых `EventEmitter`.
-
----
-
-## Событийная модель
-
-Ниже приведён перечень событий, возникающих в системе.
-
-### События изменения данных
-
-(генерируются моделями данных)
-
-- `order:changed` — изменение способа оплаты и адреса пользователя;
-- `contacts:changed` — изменение контактных данных пользователя;
-- `cards:changed` — изменение состава карточек в корзине.
-
-### События пользовательского интерфейса
-
-(генерируются классами слоя представления)
-
-- `order:open` — открытие модального окна редактирования оплаты и адреса;
-- `contacts:open` — открытие модального окна контактных данных;
-- `card:open` — открытие модального окна карточки товара;
-- `basket:open` — открытие модального окна корзины;
-- `success-payment:open` — открытие окна уведомления об успешной оплате;
-- `card:select` — выбор карточки для отображения в модальном окне;
-- `card-basket:register` — нажатие кнопки «оформить» в корзине;
-- `order:register` — нажатие кнопки «далее» в форме оплаты и адреса;
-- `contacts:register` — нажатие кнопки «оплатить» в форме контактных данных;
-- `card-basket:delete` — удаление карточки из корзины;
-- `order:validation` — валидация формы оплаты и адреса;
-- `contacts:validation` — валидация формы контактных данных;
-- `payment:edit` — изменение состояния выбора способа оплаты;
-- `order:input` — изменение данных формы оплаты и адреса;
-- `contacts:input` — изменение данных формы контактных данных;
-- `order:submit` — сохранение способа оплаты и адреса из модального окна;
-- `contacts:submit` — сохранение контактных данных из модального окна;
-- `new-card:edit` — добавление товара в корзину;
-- `basket:clear` — очистка корзины после успешной покупки;
-- `contacts:clear` — очистка контактных данных в модальном окне;
-- `order:clear` — очистка данных о способе оплаты и адресе пользователя.
