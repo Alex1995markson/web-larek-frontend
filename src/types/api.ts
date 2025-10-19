@@ -1,39 +1,35 @@
 /**
- * API DTOs and client interface.
- * These types model the data as it comes *from* or is sent *to* the backend API.
- * They can differ from domain models (e.g., naming, optional fields, pagination wrappers).
+ * API-facing data transfer objects (DTOs) and simple client contract.
+ * NOTE: Only data shapes are declared here; no class/interface for views/models.
  */
 
-/** Common HTTP method literals for POST-like operations */
+/** Common HTTP method literals for write operations */
 export type ApiPostMethods = 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-/** Generic HTTP method type */
-export type HttpMethod = 'GET' | ApiPostMethods;
-
-/** Generic API error shape */
+/** Generic API error for uniform handling upstream */
 export interface ApiError {
   status: number;
   message: string;
   details?: unknown;
 }
 
-/** A simple Result type to standardize client returns if needed */
+/** Result helper for functions returning either data or error */
 export type Result<T> = { ok: true; data: T } | { ok: false; error: ApiError };
 
 /**
- * Example DTO as received from API. Kept close to the backend contract.
- * If your backend uses different field names, reflect them here and map to domain types elsewhere.
+ * Card DTO as returned by the backend.
+ * Aligned with current domain to reduce mapping at this stage.
  */
 export interface CardDTO {
-  id: string;                 // backend may use `id` instead of `_id`
+  _id: string;
+  title: string;
   description: string;
   image: string;
-  title: string;
   category: string;
   price: number | null;
 }
 
-/** Optional: DTOs for order/checkout flows (customize as your API evolves) */
+/** Checkout creation DTOs (adjust as backend evolves) */
 export interface CreateOrderDTO {
   payment: string;
   address: string;
@@ -48,25 +44,23 @@ export interface CreateOrderDTO {
 export interface CreateOrderResponseDTO {
   orderId: string;
   total: number;
-  createdAt: string; // ISO
+  createdAt: string; // ISO 8601
 }
 
 /**
- * API client interface (no implementation here).
- * Implementations should be side-effect free regarding global state and use fetch/XHR underneath.
+ * Minimal API client function signatures (no class typing to avoid overcommitment at this stage).
+ * You can implement these as plain functions or wrap them later.
  */
-export interface IApiClient {
-  baseUrl: string;
+export type GetFn = <TResponse = unknown>(endpoint: string, init?: Omit<RequestInit, 'method'>) => Promise<TResponse>;
 
-  get<TResponse = unknown>(endpoint: string, init?: Omit<RequestInit, 'method'>): Promise<TResponse>;
+export type PostFn = <TBody = unknown, TResponse = unknown>(
+  endpoint: string,
+  body: TBody,
+  method?: ApiPostMethods,
+  init?: Omit<RequestInit, 'method' | 'body'>
+) => Promise<TResponse>;
 
-  post<TBody = unknown, TResponse = unknown>(
-    endpoint: string,
-    body: TBody,
-    method?: ApiPostMethods,
-    init?: Omit<RequestInit, 'method' | 'body'>
-  ): Promise<TResponse>;
-
-  /** A convenience method to normalize fetch Response -> JSON or ApiError (optional) */
-  handleResponse?<T = unknown>(response: Response): Promise<T>;
+export interface ApiFns {
+  get: GetFn;
+  post: PostFn;
 }

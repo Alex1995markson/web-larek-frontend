@@ -1,35 +1,40 @@
 /**
- * Core domain entities and shared type aliases.
- * These types represent the entities the application manipulates.
- * They are intentionally framework-agnostic.
+ * Domain data types (entities and projections).
+ * Kept minimal and framework-agnostic.
  */
 
+/** Unique identifier type for domain entities */
+export type Id = string;
+
+/** Core product card as used across the application */
 export interface ICard {
-  _id: string;
+  _id: Id;
+  title: string;
   description: string;
   image: string;
-  title: string;
   category: string;
   price: number | null;
 }
 
+/** User form inputs collected during checkout flows */
 export interface IForm {
   payment: string;
   email: string;
   phone: string;
+  /** NB: fixed typo to `address` */
   address: string;
 }
 
-/** A minimal projection of ICard used for basket line items in UI */
+/** Basket line item projection used in UI summaries */
 export type TCardBasket = Pick<ICard, 'title' | 'price'>;
 
-/** A projection of form fields used for the payment step */
+/** Payment step projection */
 export type TPayment = Pick<IForm, 'payment' | 'address'>;
 
-/** A projection of form fields used for the contacts step */
+/** Contacts step projection */
 export type TContacts = Pick<IForm, 'email' | 'phone'>;
 
-/** A projection containing only the total purchase amount */
+/** Purchase summary projection */
 export type TPurchase = {
   total: number;
 };
