@@ -1,49 +1,88 @@
+import { ApiPostMethods } from '../components/base/api';
+import { IEvents } from '../components/base/events';
 
-// Полное описание товара, полученное с API 
-export interface IItem {
-    id: string;
-    description: string;
-    image: string;
-    title: string;
-    category: string;
-    price: number | null; 
-    index?: string;
+export interface ICard {
+	id: string;
+	description: string;
+	image: string;
+	title: string;
+	category: string;
+	price: number | null;
 }
 
-// Данные о заказе, которые отправляются на сервер
 export interface IOrder {
-payment: PaymentMethod;
-email: string;
-phone: string;
-address: string;
-total: number; 
-items: string[]; 
+	payment: string;
+	email: string;
+	phone: string;
+	address: string;
+	total: number;
+	items: string[];
 }
 
-export interface IOrderConfirmed {
-  id: string;
-  total: number;
+export interface IUser {
+	payment: string;
+	address: string;
+	email: string;
+	phone: string;
+}
+
+export interface ICardData {
+	items: ICard[];
+	preview: string | null;
+	getCard(cardId: string): ICard | undefined;
 }
 
 export interface IBasket {
-  items: string[];
+	items: string[];
 	total: number;
+	addItem(id: string): void;
+	removeItem(id: string): void;
 }
 
-// Описание интерфейса данных покупателя
-export interface IUser {
-	payment?: PaymentMethod;
-	address?: string;
-	email?: string;
-	phone?: string;
+export interface IUserData {
+	getUserInfo(): IUser;
+	setUserInfo(userData: IUser): void;
 }
 
-export interface ICardActions {
-	onClick: (event: MouseEvent) => void;
+export interface IOrderPresenter {
+	init(
+		orderButton: HTMLElement,
+		modal: HTMLElement,
+		events: IEvents
+	): void;
 }
-export type PaymentMethod = 'card' | 'cash' | '';
 
-export interface IOrderFormData extends IOrder {
-  valid: boolean;
-  errors: string;
+export type TUserPay = Pick<IUser, 'payment' | 'address'>;
+export type TUserEmail = Pick<IUser, 'email' | 'phone'>;
+export type TUserInfo = Pick<IUser, 'email' | 'phone' | 'payment' | 'address'>;
+
+export interface IApi {
+	baseUrl: string;
+	get<T>(uri: string): Promise<T>;
+	post<T>(uri: string, data: object, method?: ApiPostMethods): Promise<T>;
+}
+
+export interface IModalData {
+	modal: HTMLElement;
+}
+
+export interface IEventData {
+	[key: string]: unknown;
+}
+
+export interface ICardEventData extends IEventData {
+	cardId: string;
+}
+
+export interface IBasketEventData extends IEventData {
+	ids: string[];
+}
+
+export interface IRemoveCardEventData extends IEventData {
+	id: string;
+}
+
+export interface IOrderSuccessEventData extends IEventData {
+	id: string;
+	total: number;
 }
