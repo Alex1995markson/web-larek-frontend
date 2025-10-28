@@ -1,5 +1,6 @@
 import { ApiPostMethods } from '../components/base/api';
 import { IEvents } from '../components/base/events';
+import { Modal } from '../components/common/Modal';
 
 export interface ICard {
 	id: string;
@@ -47,7 +48,7 @@ export interface IUserData {
 export interface IOrderPresenter {
 	init(
 		orderButton: HTMLElement,
-		modal: HTMLElement,
+		modal: Modal<IModalData>,
 		events: IEvents
 	): void;
 }
